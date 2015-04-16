@@ -84,7 +84,7 @@ public class Classification<T, K> {
      */
     @Override
     public String toString() {
-        return "br.eti.mertz.machinelearning.bayes.classifier.Classification [category=" + this.category
+        return "Classification [category=" + this.category
                 + ", probability=" + this.probability
                 + ", featureset=" + this.featureset
                 + "]";
