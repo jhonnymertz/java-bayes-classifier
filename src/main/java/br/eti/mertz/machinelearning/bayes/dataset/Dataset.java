@@ -28,72 +28,30 @@ public class Dataset {
 
     static final Logger LOG = LoggerFactory.getLogger(Dataset.class);
 
-    public List<String> index(File file, String category, Classifier<String, String> bayes) throws IOException {
+    public List<String> index(File file) throws IOException {
+
+        List<String> filesRead = new ArrayList<String>();
 
         if(file.isDirectory()) {
             File[] files = file.listFiles();
             int length = files.length;
-            LOG.debug("Files to index in {}: {} with category: {}", file.getAbsolutePath(), length, category);
+            LOG.info("Files to index in {}: {}", file.getAbsolutePath(), length);
 
-            int start = 10;
-            int end = 24009;
-
-            //10 fold cv => 24009 - 10 = 23999 => 10 folds * 2399 examples
-            //first folds ends in 2399 + 10 = 2409
-            int folds = 10;
-
-            //executions
-            for(int exec = 1; exec <= folds; exec++){
-
-                //train
-                for(int i = start; i < end; i++) {
-
-                    if((i < (exec - 1) * (end / folds)) &&
-                       (i > (exec) * (end / folds))) {
-
-
-                        FileInputStream f = new FileInputStream(files[i]);
-                        FileChannel ch = f.getChannel();
-                        MappedByteBuffer mbb = ch.map(FileChannel.MapMode.READ_ONLY, 0L, ch.size());
-                        while (mbb.hasRemaining()) {
-                            CharBuffer cb = Charset.forName("UTF-8").decode(mbb);
-                            bayes.learn(category, Arrays.asList(Filter.filter(cb.toString()).split("\\s")));
-                        }
-                        f.close();
-
-                        //String fileText = FileUtils.readFileToString(files[i]);
-
-                        LOG.debug("{} files indexed of {} from {} category to train", i, length, category);
-                    }
-                }
-
-
-                List<String> test = new ArrayList<String>();
-
-                //test
-                for(int i = ((exec - 1) * (end / folds)) == 0 ? start : ((exec - 1) * (end / folds));
-                    i <= ((exec) * (end / folds));
-                    i++) {
-
+            for(int i = 0; i < length; i++) {
                     FileInputStream f = new FileInputStream(files[i]);
                     FileChannel ch = f.getChannel();
                     MappedByteBuffer mbb = ch.map(FileChannel.MapMode.READ_ONLY, 0L, ch.size());
                     while (mbb.hasRemaining()) {
                         CharBuffer cb = Charset.forName("UTF-8").decode(mbb);
-                        test.add(Filter.filter(cb.toString()));
+                        filesRead.add(Filter.filter(cb.toString()));
                     }
                     f.close();
 
-                    LOG.debug("{} files indexed of {} from {} category to test", i, length, category);
+                    LOG.debug("{} files indexed of {} to train", i, length);
                 }
-            }
-        }
-        else {
-            LOG.debug("File to index: {}/{}", file.getAbsolutePath(), file.getName());
-            String fileText = FileUtils.readFileToString(file);
-            bayes.learn(category, Arrays.asList(fileText.split("\\s")));
         }
 
+        return filesRead;
     }
 
 }
