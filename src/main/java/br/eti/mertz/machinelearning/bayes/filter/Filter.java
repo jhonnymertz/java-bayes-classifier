@@ -7,11 +7,15 @@ import org.jsoup.Jsoup;
  */
 public class Filter {
 
-    public static String filter(String s){
+    public static String filter(String s) {
         return Jsoup.parse(s).text()
                 .toLowerCase()
+                .replaceAll("[^a-z]", " ")
                 .replaceAll("\\s+", " ").trim()
-                .replaceAll("\\.", "")
-                .replaceAll("^\\s*[\\da-zA-Z][\\da-zA-Z\\s]*$", "");
+                .replaceAll("\\b\\w{1,4}\\b\\s?", "")
+                //.replaceAll("\\.", "")
+                //.replaceAll("^\\s*[\\da-zA-Z][\\da-zA-Z\\s]*$", "")
+                //.replaceAll("[^\\w ]+$", "")
+                ;
     }
 }
