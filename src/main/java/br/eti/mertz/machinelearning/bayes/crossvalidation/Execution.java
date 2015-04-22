@@ -1,17 +1,17 @@
-package br.eti.mertz.machinelearning.bayes.validation;
+package br.eti.mertz.machinelearning.bayes.crossvalidation;
 
 /**
  * Created by jhonnymertz on 20/04/15.
  */
 public interface Execution {
 
-    Integer getVp();
+    float getVp();
 
-    Integer getVn();
+    float getVn();
 
-    Integer getFp();
+    float getFp();
 
-    Integer getFn();
+    float getFn();
 
     float getAccuracy();
 
@@ -25,5 +25,5 @@ public interface Execution {
 
     float getFMeasure();
 
-    Integer getN();
+    float getN();
 }

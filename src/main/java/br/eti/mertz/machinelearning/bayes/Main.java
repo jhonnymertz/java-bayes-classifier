@@ -3,8 +3,9 @@ package br.eti.mertz.machinelearning.bayes;
 import br.eti.mertz.machinelearning.bayes.classifier.BayesClassifier;
 import br.eti.mertz.machinelearning.bayes.classifier.Classification;
 import br.eti.mertz.machinelearning.bayes.classifier.Classifier;
+import br.eti.mertz.machinelearning.bayes.crossvalidation.Executions;
 import br.eti.mertz.machinelearning.bayes.dataset.Dataset;
-import br.eti.mertz.machinelearning.bayes.validation.ExecutionResult;
+import br.eti.mertz.machinelearning.bayes.crossvalidation.Outcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +44,7 @@ public class Main {
 
             LOG.info("Starting {}-fold-cv ...", folds);
             //executions
+            Executions executions = new Executions();
             for (int exec = 1; exec <= folds; exec++) {
 
                 bayes.reset();
@@ -68,7 +70,6 @@ public class Main {
                         LOG.debug("{} of {} {} texts learned", i, positiveTexts.size(), "positive");
                     }
                 }
-
 
                 //test
 
@@ -99,17 +100,20 @@ public class Main {
                     else fn++;
                 }
 
-
-                ExecutionResult execution = new ExecutionResult(vp, vn, fp, fn);
+                Outcome execution = new Outcome(vp, vn, fp, fn);
+                executions.addExecution(execution);
 
                 LOG.debug("Collision matrix:\n    Positive Negative \nPos {}     {} \nNeg {}     {}", vp, fn, fp, vn);
                 LOG.debug("Accuracy of execution number {}: {}", exec, execution.getAccuracy());
                 LOG.debug("Error of execution number {}: {}", exec, execution.getError());
 
-
-
             }
 
+            LOG.info("Mean Collision matrix:\n    Positive Negative \nPos {}     {} \nNeg {}     {}", executions.getVp(), executions.getFn(), executions.getFp(), executions.getVn());
+            LOG.info("Accuracy of execution number: {}", executions.getAccuracy());
+            LOG.info("TVP (Recall): {}", executions.getRecall());
+            LOG.info("TFP: {}", executions.getTFP());
+            LOG.info("Medida-F: {}", executions.getFMeasure());
 
         } catch (IOException e) {
             e.printStackTrace();

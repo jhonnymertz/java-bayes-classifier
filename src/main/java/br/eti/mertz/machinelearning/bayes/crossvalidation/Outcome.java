@@ -1,13 +1,13 @@
-package br.eti.mertz.machinelearning.bayes.validation;
+package br.eti.mertz.machinelearning.bayes.crossvalidation;
 
 /**
  * Created by jhonnymertz on 19/04/15.
  */
-public class ExecutionResult implements Execution{
+public class Outcome implements Execution{
 
-    private Integer vp, vn, fp, fn;
+    private float vp, vn, fp, fn;
 
-    public ExecutionResult(Integer vp, Integer vn, Integer fp, Integer fn) {
+    public Outcome(Integer vp, Integer vn, Integer fp, Integer fn) {
         this.vp = vp;
         this.vn = vn;
         this.fp = fp;
@@ -15,22 +15,22 @@ public class ExecutionResult implements Execution{
     }
 
     @Override
-    public Integer getVp() {
+    public float getVp() {
         return vp;
     }
 
     @Override
-    public Integer getVn() {
+    public float getVn() {
         return vn;
     }
 
     @Override
-    public Integer getFp() {
+    public float getFp() {
         return fp;
     }
 
     @Override
-    public Integer getFn() {
+    public float getFn() {
         return fn;
     }
 
@@ -65,7 +65,23 @@ public class ExecutionResult implements Execution{
     }
 
     @Override
-    public Integer getN() {
+    public float getN() {
         return vp + vn + fp + fn;
+    }
+
+    protected void setVp(float vp) {
+        this.vp = vp;
+    }
+
+    protected void setVn(float vn) {
+        this.vn = vn;
+    }
+
+    protected void setFp(float fp) {
+        this.fp = fp;
+    }
+
+    protected void setFn(float fn) {
+        this.fn = fn;
     }
 }
