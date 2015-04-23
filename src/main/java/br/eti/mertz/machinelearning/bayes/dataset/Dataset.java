@@ -1,6 +1,7 @@
 package br.eti.mertz.machinelearning.bayes.dataset;
 
-import br.eti.mertz.machinelearning.bayes.filter.Filter;
+import br.eti.mertz.machinelearning.bayes.ExecutionConfig;
+import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,37 +15,47 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by jhonnymertz on 15/04/15.
- */
 public class Dataset {
 
     static final Logger LOG = LoggerFactory.getLogger(Dataset.class);
 
-    public List<String> index(File file) throws IOException {
+    public static List<String> index(File directory, ExecutionConfig config) throws IOException {
 
         List<String> filesRead = new ArrayList<String>();
 
-        if (file.isDirectory()) {
-            File[] files = file.listFiles();
-            int length = files.length;
-            LOG.info("Files to index in {}: {}", file.getAbsolutePath(), length);
+        if (directory.isDirectory()) {
 
-            for (int i = 0; i < length; i++) {
+            int length = config.getAmountFiles();
+            LOG.info("Files to index in {}: {}", directory.getAbsolutePath(), length);
+
+            File[] files = directory.listFiles();
+
+            for(int i = config.start(); i <= config.end(); i++){
                 FileInputStream f = new FileInputStream(files[i]);
                 FileChannel ch = f.getChannel();
                 MappedByteBuffer mbb = ch.map(FileChannel.MapMode.READ_ONLY, 0L, ch.size());
                 while (mbb.hasRemaining()) {
                     CharBuffer cb = Charset.forName("UTF-8").decode(mbb);
-                    filesRead.add(Filter.filter(cb.toString()));
+                    filesRead.add(filter(cb.toString()));
                 }
                 f.close();
 
-                LOG.debug("{} files indexed of {} to train", i, length);
+                LOG.debug("{} indexed. Status: {} files indexed of {} to train", files[i].getName(), i, length);
             }
         }
 
         return filesRead;
     }
 
+    public static String filter(String s) {
+        return Jsoup.parse(s).text()
+                .toLowerCase()
+                .replaceAll("[^a-z]", " ")
+                .replaceAll("\\s+", " ").trim()
+                .replaceAll("\\b\\w{1,4}\\b\\s?", "")
+                //.replaceAll("\\.", "")
+                //.replaceAll("^\\s*[\\da-zA-Z][\\da-zA-Z\\s]*$", "")
+                //.replaceAll("[^\\w ]+$", "")
+                ;
+    }
 }

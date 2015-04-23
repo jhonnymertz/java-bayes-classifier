@@ -1,37 +1,21 @@
 package br.eti.mertz.machinelearning.bayes.crossvalidation;
 
-/**
- * Created by jhonnymertz on 19/04/15.
- */
+import lombok.Data;
+
+@Data
 public class Outcome implements Execution{
 
     private float vp, vn, fp, fn;
+
+    public Outcome(){
+        this(0,0,0,0);
+    }
 
     public Outcome(Integer vp, Integer vn, Integer fp, Integer fn) {
         this.vp = vp;
         this.vn = vn;
         this.fp = fp;
         this.fn = fn;
-    }
-
-    @Override
-    public float getVp() {
-        return vp;
-    }
-
-    @Override
-    public float getVn() {
-        return vn;
-    }
-
-    @Override
-    public float getFp() {
-        return fp;
-    }
-
-    @Override
-    public float getFn() {
-        return fn;
     }
 
     @Override
@@ -69,19 +53,19 @@ public class Outcome implements Execution{
         return vp + vn + fp + fn;
     }
 
-    protected void setVp(float vp) {
-        this.vp = vp;
+    public float incVp() {
+        return ++vp;
     }
 
-    protected void setVn(float vn) {
-        this.vn = vn;
+    public float incVn() {
+        return ++vn;
     }
 
-    protected void setFp(float fp) {
-        this.fp = fp;
+    public float incFp() {
+        return ++fp;
     }
 
-    protected void setFn(float fn) {
-        this.fn = fn;
+    public float incFn() {
+        return ++fn;
     }
 }

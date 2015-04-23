@@ -4,20 +4,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by jhonnymertz on 19/04/15.
- */
 public class Executions extends Outcome {
 
     private List<Outcome> outcomes;
 
     public Executions(){
-        super(0, 0, 0, 0);
+        super();
         outcomes = new ArrayList<Outcome>();
     }
 
     public Executions(List<Outcome> outcomes){
-        super(0, 0, 0, 0);
+        super();
         this.outcomes = outcomes;
         updateMeans();
     }
@@ -38,16 +35,16 @@ public class Executions extends Outcome {
     }
 
     private void setMeanField(String field)
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException{
         float meanField = 0;
         for(Outcome er : outcomes) {
             meanField += Float.valueOf(er.getClass().getMethod("get" + field).invoke(er).toString());
         }
 
-        this.getClass().getMethod("set" + field).invoke(meanField);
+        this.getClass().getMethod("set" + field, float.class).invoke(this, meanField);
     }
 
-    public void addExecution(Outcome er){
+    public void add(Outcome er){
         outcomes.add(er);
         updateMeans();
     }

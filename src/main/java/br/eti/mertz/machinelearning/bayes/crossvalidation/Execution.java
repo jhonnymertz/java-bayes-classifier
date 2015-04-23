@@ -1,8 +1,5 @@
 package br.eti.mertz.machinelearning.bayes.crossvalidation;
 
-/**
- * Created by jhonnymertz on 20/04/15.
- */
 public interface Execution {
 
     float getVp();

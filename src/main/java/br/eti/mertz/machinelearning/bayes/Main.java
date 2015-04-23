@@ -2,121 +2,114 @@ package br.eti.mertz.machinelearning.bayes;
 
 import br.eti.mertz.machinelearning.bayes.classifier.BayesClassifier;
 import br.eti.mertz.machinelearning.bayes.classifier.Classification;
-import br.eti.mertz.machinelearning.bayes.classifier.Classifier;
 import br.eti.mertz.machinelearning.bayes.crossvalidation.Executions;
-import br.eti.mertz.machinelearning.bayes.dataset.Dataset;
 import br.eti.mertz.machinelearning.bayes.crossvalidation.Outcome;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import br.eti.mertz.machinelearning.bayes.dataset.Dataset;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.SortedSet;
 
-/**
- * Created by jhonnymertz on 16/04/15.
- */
+@Slf4j
 public class Main {
 
-    static final Logger LOG = LoggerFactory.getLogger(Main.class);
+    private static List<String> testSubList;
 
     public static void main(String args[]) {
-        final Classifier<String, String> bayes =
-                new BayesClassifier<String, String>();
 
-        bayes.setMemoryCapacity(1000000);
-
-        Dataset dataset = new Dataset();
+        final BayesClassifier bayes = ((BayesClassifier<String, String>) new BayesClassifier<String, String>());
 
         try {
-            List<String> negativeTexts = dataset.index(new File("spec/IMDB/neg"));
-            List<String> positiveTexts = dataset.index(new File("spec/IMDB/pos"));
 
             // defined by teacher
-            int start = 10;
-            int end = 24009;
-
             //10 fold cv => 24009 - 10 = 23999 => 10 folds * 2399 examples
             //first folds ends in 2399 + 10 = 2409
-            int folds = 10;
+            ExecutionConfig config = ExecutionConfig.builder().start(10).end(24009).folds(10).build();
 
-            LOG.info("Starting {}-fold-cv ...", folds);
-            //executions
+            List<String> negativeTexts = Dataset.index(new File("spec/IMDB/neg"), config);
+            List<String> positiveTexts = Dataset.index(new File("spec/IMDB/pos"), config);
+
+            log.info("Starting {}-fold-cv ...", config.folds());
+
             Executions executions = new Executions();
-            for (int exec = 1; exec <= folds; exec++) {
+
+            for (int executionNumber = 1; executionNumber <= config.folds(); executionNumber++) {
+
+                List<String> positiveTextsTest = getTestSubList(positiveTexts, executionNumber, config);
+                List<String> positiveTextsTrain = new ArrayList<String>(positiveTexts);
+                positiveTextsTrain.removeAll(positiveTextsTest);
+
+                List<String> negativeTextsTest = getTestSubList(negativeTexts, executionNumber, config);
+                List<String> negativeTextsTrain = new ArrayList<String>(negativeTexts);
+                negativeTextsTrain.removeAll(negativeTextsTest);
 
                 bayes.reset();
 
-                LOG.info("Training {} of {} folds", exec, folds);
+
 
                 //train
+                log.info("Training {} of {} folds", executionNumber, config.folds());
+                for (String text : negativeTextsTrain)
+                        bayes.learn("negative", Arrays.asList(text.split("\\s")));
+                for (String text : positiveTextsTrain)
+                        bayes.learn("positive", Arrays.asList(text.split("\\s")));
 
-                for (int i = 0; i < negativeTexts.size(); i++) {
-                    if (i >= start &&
-                            (i > (exec) * (end / folds)) ||
-                            (i <= (exec - 1) * (end / folds))) {
-                        bayes.learn("negative", Arrays.asList(negativeTexts.get(i).split("\\s")));
-                        LOG.debug("{} of {} {} texts learned", i, negativeTexts.size(), "negative");
-                    }
-                }
 
-                for (int i = 0; i < positiveTexts.size(); i++) {
-                    if (i >= start &&
-                            (i > (exec) * (end / folds)) ||
-                            (i <= (exec - 1) * (end / folds))) {
-                        bayes.learn("positive", Arrays.asList(positiveTexts.get(i).split("\\s")));
-                        LOG.debug("{} of {} {} texts learned", i, positiveTexts.size(), "positive");
-                    }
-                }
 
                 //test
-
-                int fp = 0, fn = 0, vp = 0, vn = 0;
-
-                BayesClassifier bayesClassifier = ((BayesClassifier<String, String>) bayes);
-
-                for (String text : negativeTexts.subList(
-                        ((exec - 1) * (end / folds)) == 0 ? start : ((exec - 1) * (end / folds)),
-                        (exec) * (end / folds))) {
-                    SortedSet<Classification<String, String>> classification = (SortedSet<Classification<String, String>>) bayesClassifier.classifyDetailed(
+                log.info("Testing {} of {} folds", executionNumber, config.folds());
+                Outcome execution = new Outcome();
+                for (String text : negativeTextsTest) {
+                    Classification classification = bayes.classify(
                             Arrays.asList(text.split("\\s")));
-
-                    if (classification.last().getCategory().equals("negative"))
-                        vn++;
-                    else fp++;
+                    if (isItRight(classification, "negative"))
+                        execution.incVn();
+                    else execution.incFp();
+                }
+                for (String text : positiveTextsTest) {
+                    Classification classification = bayes.classify(
+                            Arrays.asList(text.split("\\s")));
+                    if (isItRight(classification, "positive"))
+                        execution.incVp();
+                    else execution.incFn();
                 }
 
-                for (String text : positiveTexts.subList(
-                        ((exec - 1) * (end / folds)) == 0 ? start : ((exec - 1) * (end / folds)),
-                        (exec) * (end / folds))) {
+                executions.add(execution);
 
-                    Classification classification = bayesClassifier.classify(
-                            Arrays.asList(text.split("\\s")));
-
-                    if (classification.getCategory().equals("positive"))
-                        vp++;
-                    else fn++;
-                }
-
-                Outcome execution = new Outcome(vp, vn, fp, fn);
-                executions.addExecution(execution);
-
-                LOG.debug("Collision matrix:\n    Positive Negative \nPos {}     {} \nNeg {}     {}", vp, fn, fp, vn);
-                LOG.debug("Accuracy of execution number {}: {}", exec, execution.getAccuracy());
-                LOG.debug("Error of execution number {}: {}", exec, execution.getError());
-
+                showOutcome(execution, executionNumber);
             }
 
-            LOG.info("Mean Collision matrix:\n    Positive Negative \nPos {}     {} \nNeg {}     {}", executions.getVp(), executions.getFn(), executions.getFp(), executions.getVn());
-            LOG.info("Accuracy of execution number: {}", executions.getAccuracy());
-            LOG.info("TVP (Recall): {}", executions.getRecall());
-            LOG.info("TFP: {}", executions.getTFP());
-            LOG.info("Medida-F: {}", executions.getFMeasure());
+            showCrossValidation(executions);
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static void showOutcome(Outcome execution, int executionNumber) {
+        log.debug("Collision matrix:\n    Positive Negative \nPos {}     {} \nNeg {}     {}", execution.getVp(), execution.getFn(), execution.getFp(), execution.getVn());
+        log.debug("Accuracy of execution number {}: {}", executionNumber, execution.getAccuracy());
+        log.debug("Error of execution number {}: {}", executionNumber, execution.getError());
+    }
+
+    private static void showCrossValidation(Executions executions) {
+        log.info("Mean Collision matrix:\n    Positive Negative \nPos {}     {} \nNeg {}     {}", executions.getVp(), executions.getFn(), executions.getFp(), executions.getVn());
+        log.info("Accuracy of execution number: {}", executions.getAccuracy());
+        log.info("TVP (Recall): {}", executions.getRecall());
+        log.info("TFP: {}", executions.getTFP());
+        log.info("Medida-F: {}", executions.getFMeasure());
+    }
+
+    private static boolean isItRight(Classification classification, String category) {
+        return classification.getCategory().equals(category);
+    }
+
+    public static List<String> getTestSubList(List<String> list, int exec, ExecutionConfig config) {
+        return list.subList(
+                (exec - 1) * config.getFoldSize(),
+                (exec * config.getFoldSize()) - 1);
     }
 }
