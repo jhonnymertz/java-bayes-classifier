@@ -41,7 +41,7 @@ public class Executions extends Outcome {
             meanField += Float.valueOf(er.getClass().getMethod("get" + field).invoke(er).toString());
         }
 
-        this.getClass().getMethod("set" + field, float.class).invoke(this, meanField);
+        this.getClass().getMethod("set" + field, float.class).invoke(this, meanField / outcomes.size());
     }
 
     public void add(Outcome er){

@@ -41,22 +41,17 @@ public class BayesClassifier<T, K> extends Classifier<T, K> {
             Collection<T> features) {
 
         SortedSet<Classification<T, K>> probabilities =
-                new TreeSet<Classification<T, K>>(
-                        new Comparator<Classification<T, K>>() {
+                new TreeSet<Classification<T, K>>((o1, o2) -> {
+                            int toReturn = o1.getProbability().compareTo(o2.getProbability());
+                            if ((toReturn == 0)
+                                    && !o1.getCategory().equals(o2.getCategory())) {
 
-                            @Override
-                            public int compare(Classification<T, K> o1,
-                                               Classification<T, K> o2) {
-                                int toReturn = o1.getProbability().compareTo(o2.getProbability());
-                                if ((toReturn == 0)
-                                        && !o1.getCategory().equals(o2.getCategory())) {
-                                    if (o1.getProbability().compareTo(new BigDecimal(0)) == 0)
-                                        throw new ZeroFrequencyException();
+                                if (o1.getProbability().compareTo(new BigDecimal(0)) == 0)
+                                    throw new ZeroFrequencyException();
 
-                                    toReturn = -1;
-                                }
-                                return toReturn;
+                                toReturn = -1;
                             }
+                            return toReturn;
                         });
 
         for (K category : this.getCategories())

@@ -1,4 +1,4 @@
-package br.eti.mertz.machinelearning.bayes;
+package br.eti.mertz.machinelearning.bayes.crossvalidation;
 
 import lombok.Builder;
 import lombok.Data;

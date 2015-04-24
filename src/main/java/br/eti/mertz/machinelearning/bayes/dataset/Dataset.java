@@ -1,6 +1,6 @@
 package br.eti.mertz.machinelearning.bayes.dataset;
 
-import br.eti.mertz.machinelearning.bayes.ExecutionConfig;
+import br.eti.mertz.machinelearning.bayes.crossvalidation.ExecutionConfig;
 import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,14 +48,13 @@ public class Dataset {
     }
 
     public static String filter(String s) {
-        return Jsoup.parse(s).text()
-                .toLowerCase()
-                .replaceAll("[^a-z]", " ")
-                .replaceAll("\\s+", " ").trim()
-                .replaceAll("\\b\\w{1,4}\\b\\s?", "")
-                //.replaceAll("\\.", "")
-                //.replaceAll("^\\s*[\\da-zA-Z][\\da-zA-Z\\s]*$", "")
-                //.replaceAll("[^\\w ]+$", "")
+        return s
+        //return Jsoup.parse(s).text() //remove html/xml tags
+         //       .toLowerCase()
+         //       .replaceAll("[^a-z]", " ") // remove any char that is not a letter
+          //      .replaceAll("\\s+", " ").trim() //remove additional blank spaces
+           //     .replaceAll("\\b\\w{1,4}\\b\\s?", "") //remove any word with less than 4 chars
+                //.replaceAll("\\.", "") //remove periods
                 ;
     }
 }
