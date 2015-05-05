@@ -30,7 +30,7 @@ public class Dataset {
 
             File[] files = directory.listFiles();
 
-            for(int i = config.start(); i <= config.end(); i++){
+            for (int i = config.start(); i <= config.end(); i++) {
                 FileInputStream f = new FileInputStream(files[i]);
                 FileChannel ch = f.getChannel();
                 MappedByteBuffer mbb = ch.map(FileChannel.MapMode.READ_ONLY, 0L, ch.size());

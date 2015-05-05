@@ -8,18 +8,18 @@ public class Executions extends Outcome {
 
     private List<Outcome> outcomes;
 
-    public Executions(){
+    public Executions() {
         super();
         outcomes = new ArrayList<Outcome>();
     }
 
-    public Executions(List<Outcome> outcomes){
+    public Executions(List<Outcome> outcomes) {
         super();
         this.outcomes = outcomes;
         updateMeans();
     }
 
-    private void updateMeans(){
+    private void updateMeans() {
         try {
             setMeanField("Fn");
             setMeanField("Fp");
@@ -35,16 +35,16 @@ public class Executions extends Outcome {
     }
 
     private void setMeanField(String field)
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException{
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         float meanField = 0;
-        for(Outcome er : outcomes) {
+        for (Outcome er : outcomes) {
             meanField += Float.valueOf(er.getClass().getMethod("get" + field).invoke(er).toString());
         }
 
         this.getClass().getMethod("set" + field, float.class).invoke(this, meanField / outcomes.size());
     }
 
-    public void add(Outcome er){
+    public void add(Outcome er) {
         outcomes.add(er);
         updateMeans();
     }

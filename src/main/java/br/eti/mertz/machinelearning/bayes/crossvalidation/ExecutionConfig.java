@@ -1,7 +1,6 @@
 package br.eti.mertz.machinelearning.bayes.crossvalidation;
 
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -18,11 +17,11 @@ public class ExecutionConfig {
                 (i <= (exec - 1) * (end / folds)));
     }
 
-    public int getFoldSize(){
+    public int getFoldSize() {
         return (end - start) / folds;
     }
 
-    public int getAmountFiles(){
+    public int getAmountFiles() {
         return end - start;
     }
 

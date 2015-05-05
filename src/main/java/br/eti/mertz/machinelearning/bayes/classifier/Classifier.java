@@ -1,48 +1,102 @@
 package br.eti.mertz.machinelearning.bayes.classifier;
 
-import br.eti.mertz.machinelearning.bayes.exceptions.CategoryNotFoundException;
-
 import java.util.*;
 
-public abstract class Classifier<T, K> implements FeatureProbabilityCalculator<T, K> {
+public abstract class Classifier<T, K> {
 
     private Dictionary<K, Dictionary<T, Integer>> featureCountPerCategory;
 
-    private Dictionary<T, Integer> totalFeatureCount;
+    private Dictionary<T, Integer> featureOccurrencesCount;
 
-    private Dictionary<K, Integer> totalCategoryCount;
+    private Dictionary<K, Integer> categoryOccurrencesCount;
 
     public Classifier() {
         this.reset();
     }
 
-
+    /**
+     * Resets the <i>learned</i> feature and category counts.
+     */
     public void reset() {
         this.featureCountPerCategory =
                 new Hashtable<K, Dictionary<T, Integer>>();
-        this.totalFeatureCount =
+        this.featureOccurrencesCount =
                 new Hashtable<T, Integer>();
-        this.totalCategoryCount =
+        this.categoryOccurrencesCount =
                 new Hashtable<K, Integer>();
     }
 
+    /**
+     * Returns a <code>Set</code> of features the classifier knows about.
+     *
+     * @return The <code>Set</code> of features the classifier knows about.
+     */
     public Set<T> getFeatures() {
-        return ((Hashtable<T, Integer>) this.totalFeatureCount).keySet();
+        return ((Hashtable<T, Integer>) this.featureOccurrencesCount).keySet();
     }
 
+    /**
+     * Returns a <code>Set</code> of categories the classifier knows about.
+     *
+     * @return The <code>Set</code> of categories the classifier knows about.
+     */
     public Set<K> getCategories() {
-        return ((Hashtable<K, Integer>) this.totalCategoryCount).keySet();
+        return ((Hashtable<K, Integer>) this.categoryOccurrencesCount).keySet();
     }
 
-    public int getCategoriesTotal() {
+    /**
+     * Retrieves the number of occurrences of the given feature in the given
+     * category.
+     *
+     * @param feature  The feature, which count to retrieve.
+     * @param category The category, which the feature occurred in.
+     * @return The number of occurrences of the feature in the category.
+     */
+    public int featureOccurrencesInCategory(T feature, K category) {
+        Dictionary<T, Integer> features =
+                this.featureCountPerCategory.get(category);
+        if (features == null)
+            return 0;
+        Integer count = features.get(feature);
+        return (count == null) ? 0 : count.intValue();
+    }
+
+    public int vocabularyCount() {
+        return featureOccurrencesCount.size();
+    }
+
+    /**
+     * Retrieves the number of occurrences of the given category.
+     *
+     * @param category The category, which count should be retrieved.
+     * @return The number of occurrences.
+     */
+    public int categoryOccurrencesCount(K category) {
+        Integer count = this.categoryOccurrencesCount.get(category);
+        return (count == null) ? 0 : count.intValue();
+    }
+
+    /**
+     * Retrieves the total number of examples of any category that the classifier learned.
+     *
+     * @return The total category count.
+     */
+    public int totalFeaturesLearnedCount() {
         int toReturn = 0;
-        for (Enumeration<Integer> e = this.totalCategoryCount.elements();
-             e.hasMoreElements(); ) {
+        for (Enumeration<Integer> e = this.categoryOccurrencesCount.elements(); e.hasMoreElements(); ) {
             toReturn += e.nextElement();
         }
         return toReturn;
     }
 
+    /**
+     * Increments the count of a given feature in the given category.  This is
+     * equal to telling the classifier, that this feature has occurred in this
+     * category.
+     *
+     * @param feature  The feature, which count to increase.
+     * @param category The category the feature occurred in.
+     */
     public void incrementFeature(T feature, K category) {
         Dictionary<T, Integer> features =
                 this.featureCountPerCategory.get(category);
@@ -58,63 +112,39 @@ public abstract class Classifier<T, K> implements FeatureProbabilityCalculator<T
         }
         features.put(feature, ++count);
 
-        Integer totalCount = this.totalFeatureCount.get(feature);
+        Integer totalCount = this.featureOccurrencesCount.get(feature);
         if (totalCount == null) {
-            this.totalFeatureCount.put(feature, 0);
-            totalCount = this.totalFeatureCount.get(feature);
+            this.featureOccurrencesCount.put(feature, 0);
+            totalCount = this.featureOccurrencesCount.get(feature);
         }
-        this.totalFeatureCount.put(feature, ++totalCount);
+        this.featureOccurrencesCount.put(feature, ++totalCount);
     }
 
+    /**
+     * Increments the count of a given category.  This is equal to telling the
+     * classifier, that this category has occurred once more.
+     *
+     * @param category The category, which count to increase.
+     */
     public void incrementCategory(K category) {
-        Integer count = this.totalCategoryCount.get(category);
+        Integer count = this.categoryOccurrencesCount.get(category);
         if (count == null) {
-            this.totalCategoryCount.put(category, 0);
-            count = this.totalCategoryCount.get(category);
+            this.categoryOccurrencesCount.put(category, 0);
+            count = this.categoryOccurrencesCount.get(category);
         }
-        this.totalCategoryCount.put(category, ++count);
-    }
-
-    public int featureCount(T feature, K category) {
-        Dictionary<T, Integer> features =
-                this.featureCountPerCategory.get(category);
-        if (features == null)
-            return 0;
-        Integer count = features.get(feature);
-        return (count == null) ? 0 : count.intValue();
-    }
-
-    public int categoryCount(K category) {
-        Integer count = this.totalCategoryCount.get(category);
-        return (count == null) ? 0 : count.intValue();
-    }
-
-    @Override
-    public float featureProbability(T feature, K category) {
-        if (this.categoryCount(category) == 0)
-            throw new CategoryNotFoundException();
-
-        return (float) this.featureCount(feature, category)
-                / (float) this.categoryCount(category);
-    }
-
-    public float featureProbability(T feature, K category, FeatureProbabilityCalculator calculator) {
-        if (this.categoryCount(category) == 0)
-            throw new CategoryNotFoundException();
-
-        return calculator.featureProbability(feature, category);
+        this.categoryOccurrencesCount.put(category, ++count);
     }
 
     public void learn(K category, Collection<T> features) {
-        this.learn(new Classification<T, K>(features, category));
-    }
+        Classification<T, K> classification = new Classification<T, K>(features, category);
 
-    public void learn(Classification<T, K> classification) {
-        for (T feature : classification.getFeatureset())
-            this.incrementFeature(feature, classification.getCategory());
+        classification.getFeatures()
+                .forEach(feature -> this.incrementFeature(feature, classification.getCategory()));
 
         this.incrementCategory(classification.getCategory());
     }
+
+    public abstract float featureProbability(T feature, K category);
 
     public abstract Classification<T, K> classify(Collection<T> features);
 

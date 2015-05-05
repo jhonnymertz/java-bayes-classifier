@@ -6,10 +6,7 @@ import br.eti.mertz.machinelearning.bayes.crossvalidation.ExecutionConfig;
 import br.eti.mertz.machinelearning.bayes.crossvalidation.Executions;
 import br.eti.mertz.machinelearning.bayes.crossvalidation.Outcome;
 import br.eti.mertz.machinelearning.bayes.dataset.Dataset;
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,15 +14,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.function.Consumer;
 
 @Slf4j
 public class Main {
 
     public static void main(String args[]) {
 
-        String positiveInputFolder = "spec/IMDB/pos";
-        String negativeInputFolder = "spec/IMDB/neg";
+        String positiveInputFolder = "IMDB/pos";
+        String negativeInputFolder = "IMDB/neg";
 
         try{
             positiveInputFolder = args[0];
