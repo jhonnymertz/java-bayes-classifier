@@ -1,7 +1,6 @@
 package br.eti.mertz.machinelearning.bayes.dataset;
 
 import br.eti.mertz.machinelearning.bayes.crossvalidation.ExecutionConfig;
-import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +11,7 @@ import java.nio.CharBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.file.NotDirectoryException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,18 +43,22 @@ public class Dataset {
                 LOG.debug("{} indexed. Status: {} files indexed of {} to train", files[i].getName(), i, length);
             }
         }
+        else {
+            throw new NotDirectoryException(directory.getAbsolutePath() + ": It's not a valid directory");
+        }
 
         return filesRead;
     }
 
+    //tentativas de pré-processamento como a remoção de acentuação, caracteres especiais e palavras com poucos caracteres
+    //nenhuma delas melhorou o desempenho do algoritmo
     public static String filter(String s) {
-        return s
-        //return Jsoup.parse(s).text() //remove html/xml tags
-         //       .toLowerCase()
-         //       .replaceAll("[^a-z]", " ") // remove any char that is not a letter
-          //      .replaceAll("\\s+", " ").trim() //remove additional blank spaces
-           //     .replaceAll("\\b\\w{1,4}\\b\\s?", "") //remove any word with less than 4 chars
-                //.replaceAll("\\.", "") //remove periods
-                ;
+        return s;
+        /*return Jsoup.parse(s).text() //remove html/xml tags
+                .toLowerCase()
+                .replaceAll("[^a-z]", " ") // remove any char that is not a letter
+                .replaceAll("\\s+", " ").trim() //remove additional blank spaces
+                .replaceAll("\\b\\w{1,4}\\b\\s?", "") //remove any word with less than 4 chars
+                .replaceAll("\\.", ""); //remove periods*/
     }
 }

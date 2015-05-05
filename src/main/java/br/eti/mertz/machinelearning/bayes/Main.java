@@ -6,7 +6,10 @@ import br.eti.mertz.machinelearning.bayes.crossvalidation.ExecutionConfig;
 import br.eti.mertz.machinelearning.bayes.crossvalidation.Executions;
 import br.eti.mertz.machinelearning.bayes.crossvalidation.Outcome;
 import br.eti.mertz.machinelearning.bayes.dataset.Dataset;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,9 +22,15 @@ import java.util.function.Consumer;
 @Slf4j
 public class Main {
 
-    private static List<String> testSubList;
-
     public static void main(String args[]) {
+
+        String positiveInputFolder = "spec/IMDB/pos";
+        String negativeInputFolder = "spec/IMDB/neg";
+
+        try{
+            positiveInputFolder = args[0];
+            negativeInputFolder = args[1];
+        } catch (ArrayIndexOutOfBoundsException ex){}
 
         final BayesClassifier bayes = ((BayesClassifier<String, String>) new BayesClassifier<String, String>());
 
@@ -29,11 +38,11 @@ public class Main {
 
             // defined by teacher
             //10 fold cv => 24009 - 10 = 23999 => 10 folds * 2399 examples
-            //first folds ends in 2399 + 10 = 2409
+            //first fold ends in 2399 + 10 = 2409
             ExecutionConfig config = ExecutionConfig.builder().start(10).end(24009).folds(10).build();
 
-            List<String> negativeTexts = Dataset.index(new File("spec/IMDB/neg"), config);
-            List<String> positiveTexts = Dataset.index(new File("spec/IMDB/pos"), config);
+            List<String> negativeTexts = Dataset.index(new File(positiveInputFolder), config);
+            List<String> positiveTexts = Dataset.index(new File(negativeInputFolder), config);
 
             log.info("Starting {}-fold-cv ...", config.folds());
 
@@ -51,18 +60,18 @@ public class Main {
 
                 HashMap<String, List<String>> trainTexts = new HashMap<>();
 
-                trainTexts.put("negative", negativeTrainTexts);
                 trainTexts.put("positive", positiveTrainTexts);
+                trainTexts.put("negative", negativeTrainTexts);
 
                 bayes.reset();
 
-                log.info("Training {} of {} folds", executionNumber, config.folds());
+                log.info("Training {} of {} executions", executionNumber, config.folds());
                 trainTexts.forEach((String category, List<String> texts) -> {
                     texts.forEach((text) -> bayes.learn(category, Arrays.asList(text.split("\\s"))));
                 });
 
                 //test
-                log.info("Testing {} of {} folds", executionNumber, config.folds());
+                log.info("Testing {} of {} executions", executionNumber, config.folds());
                 Outcome execution = new Outcome();
 
                 negativeTestTexts.forEach((String text) -> {

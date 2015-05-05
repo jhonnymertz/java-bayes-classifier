@@ -5,59 +5,54 @@ import br.eti.mertz.machinelearning.bayes.exceptions.ZeroFrequencyException;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
-/**
- * features: classify(feat1,...,featN) = argmax(P(cat)*PROD(P(featI|cat)
- * @see http://en.wikipedia.org/wiki/Naive_Bayes_classifier
- */
 public class BayesClassifier<T, K> extends Classifier<T, K> {
 
+    //BigDecimal para maior precisão e evitar arredondamentos
+    //a utilização de tipos primitivos como float e double pode truncar o resultado
     private BigDecimal featuresProbabilityProduct(Collection<T> features,
                                                   K category) {
-        BigDecimal product = new BigDecimal(1);
+        BigDecimal product = new BigDecimal(0);
         for (T feature : features)
-            product = product.multiply(new BigDecimal(this.featureProbability(feature, category)));
+            product = product.add(new BigDecimal(Math.log(this.featureProbability(feature, category))));
         return product;
     }
 
     @Override
     public float featureProbability(T feature, K category) {
+        //problema da frequência 0: adicionar 1 ao contador de ocorrencias da característica na categoria (estimador de laplace)
         return ((float) this.featureCount(feature, category) + 1)
                 / (float) this.categoryCount(category);
     }
 
+    /**
+     * Cálculo da função de classificação
+     * @param features lista de palavras
+     * @param category categoria
+     * @return
+     */
     private BigDecimal categoryProbability(Collection<T> features, K category) {
         return featuresProbabilityProduct(features, category)
-                .multiply(
-                        new BigDecimal(this.categoryCount(category))
-                                .divide(new BigDecimal(this.getCategoriesTotal()), MathContext.DECIMAL128));
+                .add(
+                        new BigDecimal(Math.log(0.5))); //devido a característica da distribuição dos exemplos, 50% positivos e 50% negativos
     }
 
-    private SortedSet<Classification<T, K>> categoryProbabilities(
+    /**
+     * Probabilidade de classificação do texto diante de todas as categorias
+     * @param features lista de palavras do texto
+     * @return lista com todas as classificações possíveis e sua probabilidade de ocorrência
+     */
+    private List<Classification<T, K>> categoryProbabilities(
             Collection<T> features) {
 
-        SortedSet<Classification<T, K>> probabilities =
-                new TreeSet<Classification<T, K>>((o1, o2) -> {
-                            int toReturn = o1.getProbability().compareTo(o2.getProbability());
-                            if ((toReturn == 0)
-                                    && !o1.getCategory().equals(o2.getCategory())) {
+        List<Classification<T, K>> probabilities = new ArrayList<>();
 
-                                if (o1.getProbability().compareTo(new BigDecimal(0)) == 0)
-                                    throw new ZeroFrequencyException();
-
-                                toReturn = -1;
-                            }
-                            return toReturn;
-                        });
-
-        for (K category : this.getCategories())
+        this.getCategories().forEach(category -> {
             probabilities.add(new Classification<T, K>(
                     features, category,
                     this.categoryProbability(features, category)));
+        });
 
         if (probabilities.size() == 0)
             throw new NothingLearnedException();
@@ -65,14 +60,35 @@ public class BayesClassifier<T, K> extends Classifier<T, K> {
         return probabilities;
     }
 
+    /**
+     * Implementação do método de classificação
+     * @param features lista de palavras presentes no texto
+     * @return classificação do texto, i. e., a categoria com a maior probabilidade com base na ocorrência das palavras
+     */
     @Override
     public Classification<T, K> classify(Collection<T> features) {
-        SortedSet<Classification<T, K>> probabilities =
+        List<Classification<T, K>> probabilities =
                 this.categoryProbabilities(features);
 
-        return probabilities.last();
+        return probabilities.stream().max((o1, o2) -> {
+            int toReturn = o1.getProbability().compareTo(o2.getProbability());
+            if ((toReturn == 0)
+                    && !o1.getCategory().equals(o2.getCategory())) {
+
+                if (o1.getProbability().compareTo(new BigDecimal(0)) == 0)
+                    throw new ZeroFrequencyException();
+
+                toReturn = -1;
+            }
+            return toReturn;
+        }).get();
     }
 
+    /**
+     * Classificação detalhada do texto
+     * @param features lista de palavras do texto
+     * @return probabilidade de classificação do texto diante de todas as categorias
+     */
     public Collection<Classification<T, K>> classifyDetailed(
             Collection<T> features) {
         return this.categoryProbabilities(features);
